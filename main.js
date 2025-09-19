@@ -13,14 +13,14 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// 九巴 API 基本網址
 const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-
-// 當前路線 / 方向
 let currentRoute = null;
 let direction = "inbound"; // inbound=入城, outbound=出城
+let stopCoords = [];
+let busMarker = null;
+let busIndex = 0;
 
-// 載入所有路線到下拉選單
+// 載入所有路線
 async function loadRoutes() {
   const res = await fetch(`${API_BASE}/route`);
   const data = await res.json();
@@ -28,7 +28,7 @@ async function loadRoutes() {
 
   const select = document.getElementById("routeSelect");
   select.innerHTML = "";
-  routes.slice(0, 100).forEach(r => { // 減少數量方便示範 (前100條)
+  routes.slice(0, 100).forEach(r => {
     const opt = document.createElement("option");
     opt.value = r.route;
     opt.textContent = r.route;
@@ -41,7 +41,6 @@ async function loadRoutes() {
   });
 }
 
-// 切換方向
 document.getElementById("dirBtn").addEventListener("click", () => {
   direction = direction === "inbound" ? "outbound" : "inbound";
   if (currentRoute) loadRouteStops();
@@ -59,7 +58,7 @@ async function loadRouteStops() {
     const dataStops = await resStops.json();
     const stopsData = dataStops.data;
 
-    // 清除地圖
+    // 清地圖
     map.eachLayer(layer => {
       if (layer instanceof L.Marker || layer instanceof L.CircleMarker || layer instanceof L.Polyline) {
         map.removeLayer(layer);
@@ -67,23 +66,22 @@ async function loadRouteStops() {
     });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-    // 畫路線
-    let coords = [];
+    stopCoords = [];
     for (const s of stopsData) {
       const stopInfoRes = await fetch(`${API_BASE}/stop/${s.stop}`);
       const stopInfo = await stopInfoRes.json();
       const { lat, long, name_tc, name_en } = stopInfo.data;
-      coords.push([lat, long]);
+      stopCoords.push([lat, long]);
 
       const marker = L.marker([lat, long]).addTo(map);
       marker.bindPopup(`${name_tc}<br>${name_en}`);
     }
-    if (coords.length > 0) {
-      const poly = L.polyline(coords, { color: "blue", weight: 4 }).addTo(map);
+    if (stopCoords.length > 0) {
+      const poly = L.polyline(stopCoords, { color: "blue", weight: 4 }).addTo(map);
       map.fitBounds(poly.getBounds());
     }
 
-    // 更新 ETA
+    // ETA
     const resETA = await fetch(`${API_BASE}/eta/${currentRoute}/${direction}/1`);
     const dataETA = await resETA.json();
     const etaMap = {};
@@ -117,11 +115,51 @@ async function loadRouteStops() {
       stopListEl.appendChild(li);
     }
 
+    // 動態巴士
+    if (busMarker) map.removeLayer(busMarker);
+    if (stopCoords.length > 0) {
+      busIndex = 0;
+      busMarker = L.marker(stopCoords[0], {
+        icon: L.divIcon({
+          className: "bus-icon",
+          html: "🚌",
+          iconSize: [30, 30]
+        })
+      }).addTo(map);
+
+      animateBus();
+    }
+
   } catch (err) {
     console.error("載入失敗:", err);
     document.getElementById("stopList").innerHTML = "<li>載入失敗</li>";
   }
 }
 
-// 初始化
+// 動態巴士行駛動畫
+function animateBus() {
+  if (!busMarker || stopCoords.length < 2) return;
+
+  let nextIndex = (busIndex + 1) % stopCoords.length;
+  let currentPos = L.latLng(stopCoords[busIndex]);
+  let nextPos = L.latLng(stopCoords[nextIndex]);
+  let step = 0;
+  let steps = 100;
+
+  function move() {
+    step++;
+    const lat = currentPos.lat + (nextPos.lat - currentPos.lat) * (step / steps);
+    const lng = currentPos.lng + (nextPos.lng - currentPos.lng) * (step / steps);
+    busMarker.setLatLng([lat, lng]);
+
+    if (step < steps) {
+      requestAnimationFrame(move);
+    } else {
+      busIndex = nextIndex;
+      setTimeout(animateBus, 500);
+    }
+  }
+  move();
+}
+
 loadRoutes();
