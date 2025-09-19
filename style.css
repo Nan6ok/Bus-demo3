@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  font-family: "Noto Sans TC", sans-serif;
+  background: #f9f9f9;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: #d32f2f;
+  color: white;
+}
+
+.container {
+  display: flex;
+  height: calc(100vh - 60px);
+}
+
+.sidebar {
+  width: 300px;
+  background: white;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+#map {
+  flex: 1;
+}
+
+#stopList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#stopList li {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+}
+
+#stopList li span.eta {
+  color: #d32f2f;
+  font-weight: bold;
+}
