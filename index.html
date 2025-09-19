@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <title>香港巴士實時到站</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+</head>
+<body>
+  <header>
+    <h1>🚌 香港巴士實時到站</h1>
+    <div id="clock"></div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <h2>選擇路線</h2>
+      <select id="routeSelect"></select>
+      <button id="dirBtn">切換方向</button>
+      <ul id="stopList"></ul>
+    </aside>
+    <main>
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
